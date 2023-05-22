@@ -1,5 +1,5 @@
-import { StockPriceType } from "../types/StockPriceTypes";
-import { CompanyEnum, TradeType } from "../types/TradeTypes";
+import { StockPriceType, CompaniesStockPricesType } from "../types/StockPriceTypes";
+import { CompanyEnum, TradeActionEnum, TradeType } from "../types/TradeTypes";
 
 /**
  * Iterate over days, and return an array of trades
@@ -26,15 +26,67 @@ export const runSimulation = (capital: number, prices: Record<CompanyEnum, Stock
 export const getNextTrades = (
     previousTrade: TradeType,
     initialCapital: number,
-    prices: Record<CompanyEnum, StockPriceType[]>,
+    prices: CompaniesStockPricesType,
     currentDay: number,
 ): {
     trades: TradeType[];
-    expectedProfit: number | null;
+    expectedProfit: number;
 } => {
+    const nextTrades: TradeType[] = [];
+    let nextExpectedProfit: number = null;
+
+    if (previousTrade?.action !== TradeActionEnum.BUY) {
+        const nextTrade = getBuyTrade(previousTrade, initialCapital, prices, currentDay);
+        if (nextTrade) {
+            nextTrades.push(nextTrade);
+        }
+
+        return {
+            trades: nextTrades,
+            expectedProfit: nextTrade?.expectedProfit,
+        };
+    }
+
+    // get profit of trading the other stock
+    const companies = Object.values(CompanyEnum);
+    const expectedCapitalAfterSell = previousTrade.total + previousTrade.expectedProfit + previousTrade.totalWallet;
+    const unboughtCompanies = companies.filter((x) => x !== previousTrade.name);
+
+    const nextTrade = getBestTradeInMarket(unboughtCompanies, expectedCapitalAfterSell, prices, currentDay);
+
+    const { trade, expectedProfit } = getHoldOrSellTrade(previousTrade, prices, currentDay);
+
+    nextExpectedProfit = expectedProfit;
+    if (trade) {
+        nextTrades.push(trade);
+        if (nextTrade) nextTrades.push(nextTrade);
+    }
+
+    if (nextTrade?.expectedProfit > nextExpectedProfit) {
+        const unitPrice = prices[previousTrade.name][currentDay].highestPriceOfTheDay;
+        const totalShares = previousTrade.totalShares;
+        const total = unitPrice * totalShares;
+        const totalWallet = previousTrade.totalWallet + total;
+
+        const sellTrade: TradeType = {
+            name: previousTrade.name,
+            expectedProfit: null,
+            action: TradeActionEnum.SELL,
+            date: new Date(prices[previousTrade.name][currentDay].timestamp),
+            unitPrice,
+            total,
+            totalShares,
+            totalWallet,
+        };
+        nextTrades.push(sellTrade);
+
+        nextExpectedProfit = nextTrade.expectedProfit;
+        nextTrades.push(nextTrade);
+    }
+
     return {
-        trades: [],
-        expectedProfit: null,
+        trades: nextTrades,
+        expectedProfit: nextExpectedProfit,
     };
 };
 
@@ -51,10 +103,19 @@ export const getNextTrades = (
 export const getBuyTrade = (
     previousTrade: TradeType,
     initialCapital: number,
-    prices: Record<CompanyEnum, StockPriceType[]>,
+    prices: CompaniesStockPricesType,
     currentDay: number,
 ): TradeType | null => {
-    return null;
+    const companies = Object.values(CompanyEnum);
+
+    let capital = initialCapital;
+    if (previousTrade?.action === TradeActionEnum.SELL) {
+        capital = previousTrade.totalWallet;
+    }
+
+    const nextTrade = getBestTradeInMarket(companies, capital, prices, currentDay);
+
+    return nextTrade;
 };
 
 /**
@@ -68,13 +129,42 @@ export const getBuyTrade = (
 
 export const getHoldOrSellTrade = (
     previousTrade: TradeType,
-    prices: Record<CompanyEnum, StockPriceType[]>,
+    prices: CompaniesStockPricesType,
     currentDay: number,
 ): {
     trade: TradeType | null;
     expectedProfit: number;
 } => {
-    return { trade: null, expectedProfit: null };
+    const holdingProfit = getNextDayProfit(
+        previousTrade.total,
+        previousTrade.unitPrice,
+        prices[previousTrade.name][currentDay + 1]?.highestPriceOfTheDay,
+    );
+
+    if (holdingProfit.expectedProfit < previousTrade.expectedProfit) {
+        const unitPrice = prices[previousTrade.name][currentDay].highestPriceOfTheDay;
+        const totalShares = previousTrade.totalShares;
+        const total = unitPrice * totalShares;
+        const totalWallet = previousTrade.totalWallet + total;
+
+        const sellTrade: TradeType = {
+            name: previousTrade.name,
+            expectedProfit: null,
+            action: TradeActionEnum.SELL,
+            date: new Date(prices[previousTrade.name][currentDay].timestamp),
+            unitPrice,
+            total,
+            totalShares,
+            totalWallet,
+        };
+
+        return { trade: sellTrade, expectedProfit: sellTrade.expectedProfit };
+    } else {
+        return {
+            trade: null,
+            expectedProfit: holdingProfit.expectedProfit,
+        };
+    }
 };
 
 /**
@@ -90,10 +180,41 @@ export const getHoldOrSellTrade = (
 export const getBestTradeInMarket = (
     companies: CompanyEnum[],
     capital: number,
-    prices: Record<CompanyEnum, StockPriceType[]>,
+    prices: CompaniesStockPricesType,
     currentDay: number,
 ): TradeType => {
-    return null;
+    let trade: TradeType = null;
+
+    if (capital <= 0 || currentDay + 1 === prices.amazon.length) return null;
+
+    for (let i = 0; i < companies.length; i++) {
+        const currentCompany = companies[i];
+        const currentPrice = prices[currentCompany][currentDay];
+        const nextPrice = prices[currentCompany][currentDay + 1];
+
+        // get profit of buying the stock today and selling it tomorrow
+        const { expectedProfit, total, unitPrice, totalShares, totalWallet } = getNextDayProfit(
+            capital,
+            currentPrice.lowestPriceOfTheDay,
+            nextPrice.highestPriceOfTheDay,
+        );
+
+        // compare profits per stock and return the best trade
+        if (expectedProfit > 0 && (!trade || expectedProfit > trade?.expectedProfit)) {
+            trade = {
+                expectedProfit,
+                name: currentCompany,
+                total,
+                totalShares,
+                totalWallet,
+                unitPrice,
+                date: new Date(currentPrice.timestamp),
+                action: TradeActionEnum.BUY,
+            };
+        }
+    }
+
+    return trade;
 };
 
 /**
@@ -110,5 +231,11 @@ export const getNextDayProfit = (
     buyPrice: number,
     sellPrice: number,
 ): Pick<TradeType, "expectedProfit" | "totalShares" | "totalWallet" | "total" | "unitPrice"> => {
-    return null;
+    const totalShares = Math.floor(capital / buyPrice);
+    const total = totalShares * buyPrice;
+    const totalWallet = capital - total;
+
+    const expectedProfit = totalShares * sellPrice - total;
+
+    return { expectedProfit, totalShares, totalWallet, total, unitPrice: buyPrice };
 };

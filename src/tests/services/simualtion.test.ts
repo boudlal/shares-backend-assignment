@@ -6,8 +6,8 @@ import {
     getSellTrade,
     getProfitableHoldPrices,
     getUnprofitableHoldPrices,
-    getIdenticalPricesOverDays,
     getUnprofitablePrices,
+    getIdenticalPricesOverDays,
     getFullSimulationExpectedData,
 } from "../dataFactory";
 
@@ -111,7 +111,7 @@ describe("Simulation service", () => {
             expect(result.trades.length).toEqual(0);
             expect(spy).toBeCalled();
         });
-
+        // should return an empty array and the new expected profit if holding the current stock is more profitable than selling it and buying another one
         it("should return an empty array and the new expected profit if holding the current stock is more profitable than selling it and buying another one", () => {
             // GIVEN
             const spy = jest.spyOn(simulationService, "getHoldOrSellTrade");
@@ -152,6 +152,22 @@ describe("Simulation service", () => {
             expect(result.trades[0].action).toEqual(TradeActionEnum.SELL);
             expect(result.trades[0].name).toEqual(currentTrade.name);
             expect(spy).toBeCalled();
+        });
+
+        it("should call getBestTradeInMarket with specific arguments if selling the current stock is more profitable than holding it", () => {
+            // GIVEN
+            const spy = jest.spyOn(simulationService, "getBestTradeInMarket");
+            const currentTrade = getBuyTrade();
+            const currentDayIndex = 0;
+            const prices = getUnprofitableHoldPrices();
+
+            // WHEN
+            simulationService.getNextTrades(currentTrade, currentTrade.totalWallet, prices, currentDayIndex);
+
+            // THEN
+            const expectedCompanies = [CompanyEnum.GOOGLE]; // without including the previous bought company
+            const expectedCapital = currentTrade.total + currentTrade.expectedProfit + currentTrade.totalWallet;
+            expect(spy).toHaveBeenCalledWith(expectedCompanies, expectedCapital, prices, currentDayIndex);
         });
 
         it("should return an array of 2 trades if selling the current stock and buying the other one is more profitable ", () => {
@@ -198,9 +214,11 @@ describe("Simulation service", () => {
             expect(result.trades.length).toEqual(2);
             expect(result.trades[0].action).toEqual(TradeActionEnum.SELL);
             expect(result.trades[0].name).toEqual(currentTrade.name);
+            expect(result.trades[0].totalWallet).toEqual(172);
             expect(result.trades[1].action).toEqual(TradeActionEnum.BUY);
             expect(result.trades[1].name).toEqual(CompanyEnum.GOOGLE);
-            expect(result.expectedProfit).toEqual(122);
+            expect(result.trades[1].totalWallet).toEqual(4);
+            expect(result.expectedProfit).toEqual(126);
             expect(spy).toBeCalled();
         });
     });
