@@ -1,13 +1,16 @@
 import { CompanyEnum, TradeActionEnum, TradeType } from "../../types/TradeTypes";
 import * as simulationService from "../../services/simulation";
+import * as simulationHelpers from "../../helpers/simulation";
+import { StockPriceType, CompaniesStockPricesType } from "../../types/StockPriceTypes";
 import {
     getFullSimulationPriceData,
     getBuyTrade,
+    getCurrentPrice,
     getSellTrade,
     getProfitableHoldPrices,
     getUnprofitableHoldPrices,
-    getUnprofitablePrices,
     getIdenticalPricesOverDays,
+    getUnprofitablePrices,
     getFullSimulationExpectedData,
 } from "../dataFactory";
 
@@ -21,9 +24,10 @@ describe("Simulation service", () => {
             expect(simulationService.runSimulation).toBeDefined();
         });
 
-        it("should return an array of transactions needed to make the max profit of trading stocks", () => {
+        it("should call getNextTrades & getFinalTrade and return an array of trades needed to make the max profit of trading stocks", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextTrades");
+            const getNextTradesSpy = jest.spyOn(simulationService, "getNextTrades");
+            const getFinalTradeSpy = jest.spyOn(simulationService, "getFinalTrade");
             const capital = 100;
 
             // WHEN
@@ -31,21 +35,83 @@ describe("Simulation service", () => {
 
             // THEN
             const expectedResult = getFullSimulationExpectedData();
-            expect(spy).toHaveBeenCalled();
+            expect(getNextTradesSpy).toHaveBeenCalled();
+            expect(getFinalTradeSpy).toHaveBeenCalled();
             expect(result).toEqual(expectedResult);
         });
 
         it("should return an empty array if capital is 0", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextTrades");
+            const getNextTradesSpy = jest.spyOn(simulationService, "getNextTrades");
+            const getFinalTradeSpy = jest.spyOn(simulationService, "getFinalTrade");
             const capital = 0;
 
             // WHEN
             const result = simulationService.runSimulation(capital, getFullSimulationPriceData()) as TradeType[];
 
             // THEN
-            expect(spy).not.toHaveBeenCalled();
+            expect(getNextTradesSpy).not.toHaveBeenCalled();
+            expect(getFinalTradeSpy).not.toHaveBeenCalled();
             expect(result).toEqual([]);
+        });
+
+        it("should return an empty array if prices object contains empty arrays", () => {
+            // GIVEN
+            const getNextTradesSpy = jest.spyOn(simulationService, "getNextTrades");
+            const getFinalTradeSpy = jest.spyOn(simulationService, "getFinalTrade");
+            const capital = 100;
+            const prices = { [CompanyEnum.AMAZON]: [], [CompanyEnum.GOOGLE]: [] } as CompaniesStockPricesType;
+
+            // WHEN
+            const result = simulationService.runSimulation(capital, prices) as TradeType[];
+
+            // THEN
+            expect(getNextTradesSpy).not.toHaveBeenCalled();
+            expect(getFinalTradeSpy).not.toHaveBeenCalled();
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe("getFinalTrade", () => {
+        it("should return a sell trade and call formatSellTrade if the previous trade's action is BUY", () => {
+            // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
+            const previousTrade = getBuyTrade();
+            const currentPrice: StockPriceType = getCurrentPrice();
+
+            // WHEN
+            const result = simulationService.getFinalTrade(previousTrade, currentPrice);
+
+            // THEN
+            expect(result.action).toEqual(TradeActionEnum.SELL);
+            expect(spy).toBeCalled();
+        });
+        it("should return null and not call formatSellTrade if the previous trade's action is SELL", () => {
+            // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
+            const previousTrade = getSellTrade();
+            const currentPrice: StockPriceType = getCurrentPrice();
+
+            // WHEN
+            const result = simulationService.getFinalTrade(previousTrade, currentPrice);
+            console.log("--result", result);
+
+            // THEN
+            expect(result).toEqual(null);
+            expect(spy).not.toBeCalled();
+        });
+        it("should return null and not call formatSellTrade if the previous trade is null", () => {
+            // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
+            const previousTrade: TradeType = null;
+            const currentPrice: StockPriceType = getCurrentPrice();
+
+            // WHEN
+            const result = simulationService.getFinalTrade(previousTrade, currentPrice);
+
+            // THEN
+            expect(result).toEqual(null);
+            expect(spy).not.toBeCalled();
         });
     });
 
@@ -55,13 +121,12 @@ describe("Simulation service", () => {
         });
 
         it("should return an array of next trades and an expected profit and call getBestTradeInMarket when currentTrade is null (day === 0) ", () => {
-            // GIVEN
             const spy = jest.spyOn(simulationService, "getBestTradeInMarket");
+
             const currentTrade: TradeType = null;
             const currentDayIndex = 0;
             const capital = 100;
 
-            // WHEN
             const result = simulationService.getNextTrades(
                 currentTrade,
                 capital,
@@ -69,20 +134,18 @@ describe("Simulation service", () => {
                 currentDayIndex,
             );
 
-            // THEN
             expect(Array.isArray(result.trades)).toEqual(true);
             expect(typeof result.expectedProfit).toEqual("number");
             expect(spy).toBeCalled();
         });
 
         it("should return an array of next trades and an expected profit and call getBestTradeInMarket to execute when currentTrade exists ", () => {
-            // GIVEN
             const spy = jest.spyOn(simulationService, "getBestTradeInMarket");
+
             const currentTrade = getBuyTrade();
             const currentDayIndex = 1;
             const capital = 100;
 
-            // WHEN
             const result = simulationService.getNextTrades(
                 currentTrade,
                 capital,
@@ -90,36 +153,60 @@ describe("Simulation service", () => {
                 currentDayIndex,
             );
 
-            // THEN
             expect(Array.isArray(result.trades)).toEqual(true);
             expect(typeof result.expectedProfit).toEqual("number");
             expect(spy).toBeCalled();
         });
 
         it("should return an empty array of trades if no profit can be made ", () => {
-            // GIVEN
             const spy = jest.spyOn(simulationService, "getBestTradeInMarket");
+
             const currentTrade: TradeType = null;
             const currentDayIndex = 0;
             const capital = 100;
-            const prices = getUnprofitablePrices();
+            const prices = {
+                amazon: [
+                    {
+                        highestPriceOfTheDay: 9,
+                        lowestPriceOfTheDay: 8,
+                        timestamp: 1641186000000,
+                    },
+                    {
+                        highestPriceOfTheDay: 7,
+                        lowestPriceOfTheDay: 6,
+                        timestamp: 1641272400000,
+                    },
+                ],
+                google: [
+                    {
+                        highestPriceOfTheDay: 10,
+                        lowestPriceOfTheDay: 8,
+                        timestamp: 1641186000000,
+                    },
+                    {
+                        highestPriceOfTheDay: 8,
+                        lowestPriceOfTheDay: 7,
+                        timestamp: 1641272400000,
+                    },
+                ],
+            };
 
-            // WHEN
             const result = simulationService.getNextTrades(currentTrade, capital, prices, currentDayIndex);
 
-            // THEN
             expect(result.trades.length).toEqual(0);
             expect(spy).toBeCalled();
         });
         // should return an empty array and the new expected profit if holding the current stock is more profitable than selling it and buying another one
         it("should return an empty array and the new expected profit if holding the current stock is more profitable than selling it and buying another one", () => {
-            // GIVEN
             const spy = jest.spyOn(simulationService, "getHoldOrSellTrade");
+
             const currentTrade = getBuyTrade();
+
+            //21
+
             const currentDayIndex = 0;
             const prices = getProfitableHoldPrices();
 
-            // WHEN
             const result = simulationService.getNextTrades(
                 currentTrade,
                 currentTrade.totalWallet,
@@ -127,20 +214,22 @@ describe("Simulation service", () => {
                 currentDayIndex,
             );
 
-            // THEN
             expect(result.trades.length).toEqual(0);
             expect(result.expectedProfit).toEqual(96);
             expect(spy).toBeCalled();
         });
 
+        // should return an array with a sell trade if selling the current stock is more profitable than holding it
         it("should return an array containing a sell trade if selling the current stock is more profitable than holding it", () => {
-            // GIVEN
             const spy = jest.spyOn(simulationService, "getHoldOrSellTrade");
+
             const currentTrade = getBuyTrade();
+
+            //21
+
             const currentDayIndex = 0;
             const prices = getUnprofitableHoldPrices();
 
-            // WHEN
             const result = simulationService.getNextTrades(
                 currentTrade,
                 currentTrade.totalWallet,
@@ -148,7 +237,6 @@ describe("Simulation service", () => {
                 currentDayIndex,
             );
 
-            // THEN
             expect(result.trades[0].action).toEqual(TradeActionEnum.SELL);
             expect(result.trades[0].name).toEqual(currentTrade.name);
             expect(spy).toBeCalled();
@@ -276,6 +364,7 @@ describe("Simulation service", () => {
     describe("getHoldOrSellTrade", () => {
         it("should return an empty array and the new expected profit if holding the current stock is more profitable than selling it", () => {
             // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
             const currentTrade = getBuyTrade();
             const currentDayIndex = 0;
             const prices = getProfitableHoldPrices();
@@ -286,10 +375,12 @@ describe("Simulation service", () => {
             // THEN
             expect(result.trade).toEqual(null);
             expect(result.expectedProfit).toEqual(96);
+            expect(spy).not.toBeCalled();
         });
 
         it("should return an empty array and the new expected profit if holding the current stock is equal to selling it", () => {
             // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
             const currentTrade = getBuyTrade();
             const currentDayIndex = 0;
             const prices = getIdenticalPricesOverDays();
@@ -300,10 +391,12 @@ describe("Simulation service", () => {
             // THEN
             expect(result.trade).toEqual(null);
             expect(result.expectedProfit).toEqual(currentTrade.expectedProfit);
+            expect(spy).not.toBeCalled();
         });
 
         it("should return a sell trade and null expected profit if holding the current stock is less profitable than selling it", () => {
             // GIVEN
+            const spy = jest.spyOn(simulationHelpers, "formatSellTrade");
             const currentTrade = getBuyTrade();
             const currentDayIndex = 0;
             const prices = getUnprofitableHoldPrices();
@@ -314,6 +407,7 @@ describe("Simulation service", () => {
             // THEN
             expect(result.trade.action).toEqual(TradeActionEnum.SELL);
             expect(result.expectedProfit).toEqual(null);
+            expect(spy).toBeCalled();
         });
     });
 
@@ -322,9 +416,9 @@ describe("Simulation service", () => {
             expect(simulationService.getNextTrades).toBeDefined();
         });
 
-        it("should return a correct tradeType object and call getNextDayProfit", () => {
+        it("should return a correct tradeType object and call calculateNextDayProfit", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextDayProfit");
+            const spy = jest.spyOn(simulationHelpers, "calculateNextDayProfit");
             const companies = Object.values(CompanyEnum);
             const currentDayIndex = 0;
             const capital = 100;
@@ -343,9 +437,9 @@ describe("Simulation service", () => {
             expect(spy).toBeCalled();
         });
 
-        it("should return null and call getNextDayProfit if there is no profitable trade", () => {
+        it("should return null and call calculateNextDayProfit if there is no profitable trade", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextDayProfit");
+            const spy = jest.spyOn(simulationHelpers, "calculateNextDayProfit");
             const companies = Object.values(CompanyEnum);
             const currentDayIndex = 0;
             const capital = 100;
@@ -359,9 +453,9 @@ describe("Simulation service", () => {
             expect(spy).toBeCalled();
         });
 
-        it("should return null if capital is 0 and not call getNextDayProfit", () => {
+        it("should return null if capital is 0 and not call calculateNextDayProfit", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextDayProfit");
+            const spy = jest.spyOn(simulationHelpers, "calculateNextDayProfit");
             const companies = Object.values(CompanyEnum);
             const currentDayIndex = 0;
             const capital = 0;
@@ -379,9 +473,9 @@ describe("Simulation service", () => {
             expect(spy).not.toBeCalled();
         });
 
-        it("should return null if the current day is the last day and not call getNextDayProfit", () => {
+        it("should return null if the current day is the last day and not call calculateNextDayProfit", () => {
             // GIVEN
-            const spy = jest.spyOn(simulationService, "getNextDayProfit");
+            const spy = jest.spyOn(simulationHelpers, "calculateNextDayProfit");
             const companies = Object.values(CompanyEnum);
             const currentDayIndex = getFullSimulationPriceData().amazon.length - 1;
             const capital = 0;
@@ -397,52 +491,6 @@ describe("Simulation service", () => {
             // THEN
             expect(result).toBe(null);
             expect(spy).not.toBeCalled();
-        });
-    });
-
-    describe("getNextDayProfit", () => {
-        it("should be defined", () => {
-            expect(simulationService.getNextDayProfit).toBeDefined();
-        });
-
-        it("should return a TradeType object containing the expectedProfit, totalShares, totalWallet, total and unitPrice", () => {
-            // Given
-            const capital = 100;
-
-            // WHEN
-            const result = simulationService.getNextDayProfit(capital, 10, 12);
-
-            // THEN
-            const expectedResult = {
-                expectedProfit: 20,
-                totalShares: 10,
-                total: 100,
-                totalWallet: 0,
-                unitPrice: 10,
-            };
-            expect(result).toEqual(expectedResult);
-        });
-
-        it("should return totalWallet greater than 0, if we still have funds after buying shares", () => {
-            // GIVEN
-            const capital = 100;
-
-            // WHEN
-            const result = simulationService.getNextDayProfit(capital, 9, 12);
-
-            // THEN
-            expect(result.totalWallet).toBeGreaterThan(0);
-        });
-
-        it("should return negative profit if next day price is less than the current day", () => {
-            // GIVEN
-            const capital = 100;
-
-            // WHEN
-            const result = simulationService.getNextDayProfit(capital, 10, 8);
-
-            // THEN
-            expect(result.expectedProfit).toBeLessThan(0);
         });
     });
 });

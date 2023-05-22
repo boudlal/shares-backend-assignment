@@ -1,3 +1,4 @@
+import { calculateNextDayProfit, formatSellTrade } from "../helpers/simulation";
 import { StockPriceType, CompaniesStockPricesType } from "../types/StockPriceTypes";
 import { CompanyEnum, TradeActionEnum, TradeType } from "../types/TradeTypes";
 
@@ -5,12 +6,80 @@ import { CompanyEnum, TradeActionEnum, TradeType } from "../types/TradeTypes";
  * Iterate over days, and return an array of trades
  *
  * @param {number} capital initial capital
- * @param {Record<CompanyEnum, StockPriceType[]>} prices prices of google and amazon
+ * @param {CompaniesStockPricesType} prices prices of google and amazon
  * @return {number} an array of trades
  */
 
-export const runSimulation = (capital: number, prices: Record<CompanyEnum, StockPriceType[]>): TradeType[] => {
-    return [];
+export const runSimulation = (capital: number, prices: CompaniesStockPricesType): TradeType[] => {
+    if (capital === 0) return [];
+    let trades: TradeType[] = [];
+
+    const totalDays = prices.amazon.length;
+    for (let i = 0; i < totalDays; i++) {
+        const currentTrade = trades[trades.length - 1] || null;
+
+        // check if it's the last day
+        if (i + 1 === totalDays) {
+            const finalTrade = getFinalTrade(currentTrade, prices[currentTrade.name][i]);
+            if (finalTrade) trades.push(finalTrade);
+
+            continue;
+        }
+
+        const result = getNextTrades(currentTrade, capital, prices, i);
+        if (result.trades.length === 0 && result.expectedProfit > 0) {
+            currentTrade.expectedProfit = result.expectedProfit;
+        }
+
+        trades = trades.concat(result.trades);
+    }
+
+    return trades;
+};
+
+/**
+ * Get Final Trade if a buy trade already exists
+ *
+ * @param {TradeType} previousTrade the previous trade made
+ * @param {StockPriceType} currentPrice Price of the previous stock bought at the current day
+ * @return {TradeType | null} the final trade or null
+ */
+
+export const getFinalTrade = (previousTrade: TradeType, currentPrice: StockPriceType): TradeType | null => {
+    if (previousTrade?.action === TradeActionEnum.BUY) {
+        const sellTrade = formatSellTrade(previousTrade, currentPrice);
+        return sellTrade;
+    }
+
+    return null;
+};
+
+/**
+ * Get Next Buy Trade after calculating the current capital
+ *
+ * @param {TradeType} previousTrade The previous trade made
+ * @param {number} initialCapital The initial capital
+ * @param {CompaniesStockPricesType} prices Prices of all stocks
+ * @param {number} currentDay Current Day
+ * @return {TradeType | null} The buy trade or null
+ */
+
+export const getBuyTrade = (
+    previousTrade: TradeType,
+    initialCapital: number,
+    prices: CompaniesStockPricesType,
+    currentDay: number,
+): TradeType | null => {
+    const companies = Object.values(CompanyEnum);
+
+    let capital = initialCapital;
+    if (previousTrade?.action === TradeActionEnum.SELL) {
+        capital = previousTrade.totalWallet;
+    }
+
+    const nextTrade = getBestTradeInMarket(companies, capital, prices, currentDay);
+
+    return nextTrade;
 };
 
 /**
@@ -18,7 +87,7 @@ export const runSimulation = (capital: number, prices: Record<CompanyEnum, Stock
  *
  * @param {number} initialCapital The initial capital
  * @param {TradeType} previousTrade The previous trade made
- * @param {Record<CompanyEnum, StockPriceType[]>} prices Prices of all stocks
+ * @param {CompaniesStockPricesType} prices Prices of all stocks
  * @param {number} currentDay Current Day
  * @return {{TradeType[], expectedProfit}} Array of next trades and expected profit in case of holding
  */
@@ -52,36 +121,19 @@ export const getNextTrades = (
     const expectedCapitalAfterSell = previousTrade.total + previousTrade.expectedProfit + previousTrade.totalWallet;
     const unboughtCompanies = companies.filter((x) => x !== previousTrade.name);
 
-    const nextTrade = getBestTradeInMarket(unboughtCompanies, expectedCapitalAfterSell, prices, currentDay);
+    const buyTrade = getBestTradeInMarket(unboughtCompanies, expectedCapitalAfterSell, prices, currentDay);
 
-    const { trade, expectedProfit } = getHoldOrSellTrade(previousTrade, prices, currentDay);
-
+    const { trade: sellTrade, expectedProfit } = getHoldOrSellTrade(previousTrade, prices, currentDay);
     nextExpectedProfit = expectedProfit;
-    if (trade) {
-        nextTrades.push(trade);
-        if (nextTrade) nextTrades.push(nextTrade);
-    }
 
-    if (nextTrade?.expectedProfit > nextExpectedProfit) {
-        const unitPrice = prices[previousTrade.name][currentDay].highestPriceOfTheDay;
-        const totalShares = previousTrade.totalShares;
-        const total = unitPrice * totalShares;
-        const totalWallet = previousTrade.totalWallet + total;
-
-        const sellTrade: TradeType = {
-            name: previousTrade.name,
-            expectedProfit: null,
-            action: TradeActionEnum.SELL,
-            date: new Date(prices[previousTrade.name][currentDay].timestamp),
-            unitPrice,
-            total,
-            totalShares,
-            totalWallet,
-        };
+    if (sellTrade) {
         nextTrades.push(sellTrade);
+        if (buyTrade) nextTrades.push(buyTrade);
+    } else if (buyTrade?.expectedProfit > nextExpectedProfit) {
+        const sellTrade = formatSellTrade(previousTrade, prices[previousTrade.name][currentDay]);
 
-        nextExpectedProfit = nextTrade.expectedProfit;
-        nextTrades.push(nextTrade);
+        nextExpectedProfit = buyTrade.expectedProfit;
+        nextTrades.push(sellTrade, buyTrade);
     }
 
     return {
@@ -91,38 +143,10 @@ export const getNextTrades = (
 };
 
 /**
- * Get Next Buy Trade after calculating the current capital
- *
- * @param {TradeType} previousTrade The previous trade made
- * @param {number} initialCapital The initial capital
- * @param {Record<CompanyEnum, StockPriceType[]>} prices Prices of all stocks
- * @param {number} currentDay Current Day
- * @return {TradeType | null} The buy trade or null
- */
-
-export const getBuyTrade = (
-    previousTrade: TradeType,
-    initialCapital: number,
-    prices: CompaniesStockPricesType,
-    currentDay: number,
-): TradeType | null => {
-    const companies = Object.values(CompanyEnum);
-
-    let capital = initialCapital;
-    if (previousTrade?.action === TradeActionEnum.SELL) {
-        capital = previousTrade.totalWallet;
-    }
-
-    const nextTrade = getBestTradeInMarket(companies, capital, prices, currentDay);
-
-    return nextTrade;
-};
-
-/**
  * Compare the profit of holding until next day and the profit of selling today
  *
  * @param {TradeType} previousTrade The previous trade made
- * @param {Record<CompanyEnum, StockPriceType[]>} prices Prices of all stocks
+ * @param {CompaniesStockPricesType} prices Prices of all stocks
  * @param {number} currentDay Current Day
  * @return {{TradeType, expectedProfit}} the sell trade if exists and the expected profit
  */
@@ -135,28 +159,14 @@ export const getHoldOrSellTrade = (
     trade: TradeType | null;
     expectedProfit: number;
 } => {
-    const holdingProfit = getNextDayProfit(
+    const holdingProfit = calculateNextDayProfit(
         previousTrade.total,
         previousTrade.unitPrice,
         prices[previousTrade.name][currentDay + 1]?.highestPriceOfTheDay,
     );
 
     if (holdingProfit.expectedProfit < previousTrade.expectedProfit) {
-        const unitPrice = prices[previousTrade.name][currentDay].highestPriceOfTheDay;
-        const totalShares = previousTrade.totalShares;
-        const total = unitPrice * totalShares;
-        const totalWallet = previousTrade.totalWallet + total;
-
-        const sellTrade: TradeType = {
-            name: previousTrade.name,
-            expectedProfit: null,
-            action: TradeActionEnum.SELL,
-            date: new Date(prices[previousTrade.name][currentDay].timestamp),
-            unitPrice,
-            total,
-            totalShares,
-            totalWallet,
-        };
+        const sellTrade = formatSellTrade(previousTrade, prices[previousTrade.name][currentDay]);
 
         return { trade: sellTrade, expectedProfit: sellTrade.expectedProfit };
     } else {
@@ -172,7 +182,7 @@ export const getHoldOrSellTrade = (
  *
  * @param {CompanyEnum[]} companies companies to compare
  * @param {number} capital The current capital
- * @param {Record<CompanyEnum, StockPriceType[]>} prices Prices of all stocks
+ * @param {CompaniesStockPricesType} prices Prices of all stocks
  * @param {number} currentDay Current Day
  * @return {TradeType} the best trade
  */
@@ -193,7 +203,7 @@ export const getBestTradeInMarket = (
         const nextPrice = prices[currentCompany][currentDay + 1];
 
         // get profit of buying the stock today and selling it tomorrow
-        const { expectedProfit, total, unitPrice, totalShares, totalWallet } = getNextDayProfit(
+        const { expectedProfit, total, unitPrice, totalShares, totalWallet } = calculateNextDayProfit(
             capital,
             currentPrice.lowestPriceOfTheDay,
             nextPrice.highestPriceOfTheDay,
@@ -215,27 +225,4 @@ export const getBestTradeInMarket = (
     }
 
     return trade;
-};
-
-/**
- * calculate the profit of buying in day 0 and selling in day 1
- *
- * @param {number} capital The current capital
- * @param {number} buyPrice Buy Price
- * @param {number} sellPrice Sell Price
- * @return {Pick<TradeType, "expectedProfit" | "totalShares" | "totalWallet" | "total" | "unitPrice">} The calculated amounts of the trade
- */
-
-export const getNextDayProfit = (
-    capital: number,
-    buyPrice: number,
-    sellPrice: number,
-): Pick<TradeType, "expectedProfit" | "totalShares" | "totalWallet" | "total" | "unitPrice"> => {
-    const totalShares = Math.floor(capital / buyPrice);
-    const total = totalShares * buyPrice;
-    const totalWallet = capital - total;
-
-    const expectedProfit = totalShares * sellPrice - total;
-
-    return { expectedProfit, totalShares, totalWallet, total, unitPrice: buyPrice };
 };

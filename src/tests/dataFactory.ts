@@ -1,5 +1,5 @@
 import { CompanyEnum, TradeActionEnum, TradeType } from "../types/TradeTypes";
-import { CompaniesStockPricesType } from "../types/StockPriceTypes";
+import { CompaniesStockPricesType, StockPriceType } from "../types/StockPriceTypes";
 
 export const getBuyTrade = (trade: Partial<TradeType> = {}): TradeType => ({
     date: new Date(1641186000000),
@@ -22,6 +22,13 @@ export const getSellTrade = (trade: Partial<TradeType> = {}): TradeType => ({
     totalWallet: 172,
     expectedProfit: null,
     ...trade,
+});
+
+export const getCurrentPrice = (price: Partial<StockPriceType> = {}): StockPriceType => ({
+    highestPriceOfTheDay: 14,
+    lowestPriceOfTheDay: 10,
+    timestamp: 1641186000000,
+    ...price,
 });
 
 export const getFullSimulationPriceData = (): CompaniesStockPricesType => ({
