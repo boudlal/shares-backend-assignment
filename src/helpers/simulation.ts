@@ -14,11 +14,11 @@ export const calculateNextDayProfit = (
     buyPrice: number,
     sellPrice: number,
 ): Pick<TradeType, "expectedProfit" | "totalShares" | "totalWallet" | "total" | "unitPrice"> => {
-    const totalShares = Math.floor(capital / buyPrice);
-    const total = totalShares * buyPrice;
-    const totalWallet = capital - total;
+    const totalShares = toFixed(Math.floor(capital / buyPrice));
+    const total = toFixed(totalShares * buyPrice);
+    const totalWallet = toFixed(capital - total);
 
-    const expectedProfit = totalShares * sellPrice - total;
+    const expectedProfit = toFixed(totalShares * sellPrice - total);
 
     return { expectedProfit, totalShares, totalWallet, total, unitPrice: buyPrice };
 };
@@ -35,7 +35,7 @@ export const formatSellTrade = (previousTrade: TradeType, currentPrice: StockPri
     if (!previousTrade || !currentPrice) return null;
     const unitPrice = currentPrice.highestPriceOfTheDay;
     const totalShares = previousTrade.totalShares;
-    const total = unitPrice * totalShares;
+    const total = toFixed(unitPrice * totalShares);
     const totalWallet = previousTrade.totalWallet + total;
 
     return {
@@ -48,4 +48,16 @@ export const formatSellTrade = (previousTrade: TradeType, currentPrice: StockPri
         totalWallet,
         expectedProfit: null,
     };
+};
+
+/**
+ * return float after round it to specific digit
+ *
+ * @param {number} value The number rounded
+ * @param {number} digits Number of digits
+ * @return {number} float number
+ */
+
+export const toFixed = (value: number, digits = 4): number => {
+    return parseFloat(value.toFixed(digits));
 };

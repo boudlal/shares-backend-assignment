@@ -202,15 +202,14 @@ export const getBestTradeInMarket = (
         const currentPrice = prices[currentCompany][currentDay];
         const nextPrice = prices[currentCompany][currentDay + 1];
 
-        // get profit of buying the stock today and selling it tomorrow
         const { expectedProfit, total, unitPrice, totalShares, totalWallet } = calculateNextDayProfit(
             capital,
             currentPrice.lowestPriceOfTheDay,
             nextPrice.highestPriceOfTheDay,
         );
+        if (expectedProfit <= 0) continue;
 
-        // compare profits per stock and return the best trade
-        if (expectedProfit > 0 && (!trade || expectedProfit > trade?.expectedProfit)) {
+        if (!trade || expectedProfit > trade.expectedProfit) {
             trade = {
                 expectedProfit,
                 name: currentCompany,

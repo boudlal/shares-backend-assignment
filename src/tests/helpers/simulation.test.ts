@@ -98,4 +98,36 @@ describe("Simulation helpers", () => {
             expect(result).toEqual(null);
         });
     });
+
+    describe("toFixed", () => {
+        it("should be defined", () => {
+            expect(simulationHelpers.toFixed).toBeDefined();
+        });
+        it("should formats a number using fixed-point notation and returns a number type", () => {
+            // GIVEN
+            const number = 1.234564234;
+            const digits = 2;
+
+            // WHEN
+            const result = simulationHelpers.toFixed(number, digits);
+
+            // THEN
+            const expectedResult = parseFloat(number.toFixed(digits));
+            expect(typeof result).toEqual("number");
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should return 0 if value supplied is 0", () => {
+            // GIVEN
+            const number = 0;
+            const digits = 4;
+
+            // WHEN
+            const result = simulationHelpers.toFixed(number, digits);
+
+            // THEN
+            expect(typeof result).toEqual("number");
+            expect(result).toEqual(0);
+        });
+    });
 });
