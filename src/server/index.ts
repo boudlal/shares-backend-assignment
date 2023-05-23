@@ -1,8 +1,9 @@
 import express from "express";
 import { Server, IncomingMessage, ServerResponse } from "http";
+import { getSimulation } from "../controllers/simulation";
 const app = express();
 
-const initServer = (port: number): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> => {
+export const initServer = (port: number): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> => {
     return new Promise((resolve, reject) => {
         const server: Server<typeof IncomingMessage, typeof ServerResponse> = app
             .listen(port, () => {
@@ -15,4 +16,6 @@ const initServer = (port: number): Promise<Server<typeof IncomingMessage, typeof
     });
 };
 
-export default initServer;
+app.get("/simulate", getSimulation);
+
+export default app;
