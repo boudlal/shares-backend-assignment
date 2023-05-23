@@ -5,8 +5,8 @@ import path from "path";
 export const loadData = async (): Promise<CompaniesStockPricesType> => {
     try {
         const result = await Promise.all([
-            fs.readFile(path.resolve(__dirname, "../data/amazon.json"), "utf-8"),
-            fs.readFile(path.resolve(__dirname, "../data/google.json"), "utf-8"),
+            fs.readFile(path.resolve(__dirname, "../../data/amazon.json"), "utf-8"),
+            fs.readFile(path.resolve(__dirname, "../../data/google.json"), "utf-8"),
         ]);
 
         const amazon = JSON.parse(result[0]);
