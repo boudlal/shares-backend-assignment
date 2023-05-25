@@ -1,7 +1,9 @@
 import express from "express";
+import cors from "cors";
 import { Server, IncomingMessage, ServerResponse } from "http";
 import { getSimulation } from "../controllers/simulation";
 const app = express();
+app.use(cors());
 
 export const initServer = (port: number): Promise<Server<typeof IncomingMessage, typeof ServerResponse>> => {
     return new Promise((resolve, reject) => {

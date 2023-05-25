@@ -18,6 +18,8 @@
     },
     "homepage": "https://github.com/boudlal/shares-backend-assignment#readme",
     "dependencies": {
+        "@types/cors": "^2.8.13",
+        "cors": "^2.8.5",
         "dotenv": "^16.0.3",
         "express": "^4.18.2",
         "supertest": "^6.3.3"
