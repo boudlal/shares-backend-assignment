@@ -5,7 +5,10 @@
     "main": "index.ts",
     "scripts": {
         "dev": "nodemon",
-        "test": "NODE_ENV=test jest --setupFiles dotenv/config"
+        "test": "NODE_ENV=test jest --setupFiles dotenv/config",
+        "tsc": "tsc",
+        "build": "rm -rf ./build && tsc",
+        "start": "npm run build && node ./build/index.js"
     },
     "repository": {
         "type": "git",
@@ -19,25 +22,25 @@
     "homepage": "https://github.com/boudlal/shares-backend-assignment#readme",
     "dependencies": {
         "@types/cors": "^2.8.13",
-        "cors": "^2.8.5",
-        "dotenv": "^16.0.3",
-        "express": "^4.18.2",
-        "supertest": "^6.3.3"
-    },
-    "devDependencies": {
         "@types/express": "^4.17.17",
         "@types/jest": "^29.5.1",
         "@types/supertest": "^2.0.12",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "jest": "^29.5.0",
+        "node-mocks-http": "^1.12.2",
+        "supertest": "^6.3.3",
+        "ts-jest": "^29.1.0",
+        "typescript": "^5.0.4"
+    },
+    "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^5.59.6",
         "@typescript-eslint/parser": "^5.59.6",
         "eslint": "^8.40.0",
         "eslint-config-prettier": "^8.8.0",
         "eslint-plugin-prettier": "^4.2.1",
-        "jest": "^29.5.0",
-        "node-mocks-http": "^1.12.2",
         "nodemon": "^2.0.22",
-        "prettier": "^2.8.8",
-        "ts-jest": "^29.1.0",
-        "typescript": "^5.0.4"
+        "prettier": "^2.8.8"
     }
 }
