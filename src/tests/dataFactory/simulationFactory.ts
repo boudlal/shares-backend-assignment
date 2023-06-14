@@ -1,5 +1,5 @@
-import { CompanyEnum, TradeActionEnum, TradeType } from "../types/TradeTypes";
-import { StockPriceType, CompaniesStockPricesType } from "../types/StockPriceTypes";
+import { CompanyEnum, TradeActionEnum, TradeType } from "../../types/TradeTypes";
+import { StockPriceType, CompaniesStockPricesType } from "../../types/StockPriceTypes";
 
 export const getBuyTrade = (trade: Partial<TradeType> = {}): TradeType => ({
     date: new Date(1641186000000),

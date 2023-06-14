@@ -12,7 +12,7 @@ import {
     getIdenticalPricesOverDays,
     getUnprofitablePrices,
     getFullSimulationExpectedData,
-} from "../dataFactory";
+} from "../dataFactory/simulationFactory";
 
 describe("Simulation service", () => {
     afterEach(() => {

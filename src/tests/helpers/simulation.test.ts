@@ -1,7 +1,7 @@
 import { TradeType } from "../../types/TradeTypes";
 import * as simulationHelpers from "../../helpers/simulation";
 import { StockPriceType } from "../../types/StockPriceTypes";
-import { getBuyTrade, getCurrentPrice, getSellTrade } from "../dataFactory";
+import { getBuyTrade, getCurrentPrice, getSellTrade } from "../dataFactory/simulationFactory";
 
 describe("Simulation helpers", () => {
     afterEach(() => {
