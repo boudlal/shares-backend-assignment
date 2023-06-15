@@ -22,8 +22,8 @@ describe("Stats helpers", () => {
 
             // THEN
             const expectedResult = {
-                [MonthsEnum.JAN]: pricesData.slice(0, 1),
-                [MonthsEnum.FEB]: pricesData.slice(2, 3),
+                [MonthsEnum.JAN]: pricesData.slice(0, 2),
+                [MonthsEnum.FEB]: pricesData.slice(2),
             };
             expect(spy).toBeCalledTimes(pricesData.length);
             expect(result).toEqual(expectedResult);
