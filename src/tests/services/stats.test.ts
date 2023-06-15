@@ -1,9 +1,9 @@
 import { CompanyEnum } from "../../types/TradeTypes";
-import * as statsService from "../../service/stats";
+import * as statsService from "../../services/stats";
 import * as statsHelpers from "../../helpers/stats";
 import { getAveragePerMonthExpectedData, getAveragePerMonthPriceData } from "../dataFactory/statsFactory";
 import { CompaniesStockPricesType } from "../../types/StockPriceTypes";
-import { CompaniesAveragePerMonthType } from "../../types/StatsTypes";
+import { AveragePerMonthType } from "../../types/StatsTypes";
 
 describe("Stats service", () => {
     afterEach(() => {
@@ -14,10 +14,10 @@ describe("Stats service", () => {
             expect(statsService.getAveragePerMonth).toBeDefined();
         });
 
-        it("should return an array of AveragePerMonth objects and call groupByMonth && calculateAverage", async () => {
+        it("should return an array of AveragePerMonth objects and call groupByMonth && calculateMonthlyAverage", async () => {
             // GIVEN
             const groupByMonthSpy = jest.spyOn(statsHelpers, "groupByMonth");
-            const calculateAverageSpy = jest.spyOn(statsHelpers, "calculateAverage");
+            const calculateMonthlyAverageSpy = jest.spyOn(statsHelpers, "calculateMonthlyAverage");
             const pricesData = getAveragePerMonthPriceData();
 
             // WHEN
@@ -25,14 +25,14 @@ describe("Stats service", () => {
 
             // THEN
             expect(groupByMonthSpy).toBeCalledTimes(2);
-            expect(calculateAverageSpy).toBeCalledTimes(2 * pricesData.amazon.length);
+            expect(calculateMonthlyAverageSpy).toBeCalledTimes(pricesData.amazon.length);
             expect(result).toEqual(getAveragePerMonthExpectedData());
         });
 
-        it("should call groupByMonth one time and not call calculateAverage and return empty Averages array if prices object contains empty arrays", () => {
+        it("should call groupByMonth one time and not call calculateMonthlyAverage and return empty Averages array if prices object contains empty arrays", () => {
             // GIVEN
             const groupByMonthSpy = jest.spyOn(statsHelpers, "groupByMonth");
-            const calculateAverageSpy = jest.spyOn(statsHelpers, "calculateAverage");
+            const calculateMonthlyAverageSpy = jest.spyOn(statsHelpers, "calculateMonthlyAverage");
 
             const pricesData = { [CompanyEnum.AMAZON]: [], [CompanyEnum.GOOGLE]: [] } as CompaniesStockPricesType;
 
@@ -40,18 +40,12 @@ describe("Stats service", () => {
             const result = statsService.getAveragePerMonth(pricesData);
 
             // THEN
-            const expectedResult: CompaniesAveragePerMonthType[] = [
-                {
-                    name: CompanyEnum.AMAZON,
-                    averages: [],
-                },
-                {
-                    name: CompanyEnum.GOOGLE,
-                    averages: [],
-                },
-            ];
+            const expectedResult: Record<CompanyEnum, AveragePerMonthType[]> = {
+                [CompanyEnum.AMAZON]: [],
+                [CompanyEnum.GOOGLE]: [],
+            };
             expect(groupByMonthSpy).toBeCalledTimes(2);
-            expect(calculateAverageSpy).not.toBeCalled();
+            expect(calculateMonthlyAverageSpy).not.toBeCalled();
             expect(result).toEqual(expectedResult);
         });
     });

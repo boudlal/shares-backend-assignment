@@ -1,4 +1,4 @@
-import { CompaniesAveragePerMonthType, MonthsEnum } from "../../types/StatsTypes";
+import { AveragePerMonthType, MonthsEnum } from "../../types/StatsTypes";
 import { CompaniesStockPricesType } from "../../types/StockPriceTypes";
 import { CompanyEnum } from "../../types/TradeTypes";
 
@@ -48,31 +48,25 @@ export const getAveragePerMonthPriceData = (): CompaniesStockPricesType => ({
         },
     ],
 });
-export const getAveragePerMonthExpectedData = (): CompaniesAveragePerMonthType[] => [
-    {
-        name: CompanyEnum.AMAZON,
-        averages: [
-            {
-                month: MonthsEnum.JAN,
-                average: 10.5,
-            },
-            {
-                month: MonthsEnum.FEB,
-                average: 12.5,
-            },
-        ],
-    },
-    {
-        name: CompanyEnum.GOOGLE,
-        averages: [
-            {
-                month: MonthsEnum.JAN,
-                average: 8.05,
-            },
-            {
-                month: MonthsEnum.FEB,
-                average: 13,
-            },
-        ],
-    },
-];
+export const getAveragePerMonthExpectedData = (): Record<CompanyEnum, AveragePerMonthType[]> => ({
+    [CompanyEnum.AMAZON]: [
+        {
+            month: MonthsEnum.JAN,
+            average: 10.5,
+        },
+        {
+            month: MonthsEnum.FEB,
+            average: 12.5,
+        },
+    ],
+    [CompanyEnum.GOOGLE]: [
+        {
+            month: MonthsEnum.JAN,
+            average: 8.05,
+        },
+        {
+            month: MonthsEnum.FEB,
+            average: 13,
+        },
+    ],
+});
