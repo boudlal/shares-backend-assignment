@@ -1,4 +1,4 @@
-import { AveragePerMonthType, MonthsEnum } from "../../types/StatsTypes";
+import { AveragePerMonthType, BestTradeInfoType, MonthsEnum } from "../../types/StatsTypes";
 import { CompaniesStockPricesType } from "../../types/StockPriceTypes";
 import { CompanyEnum } from "../../types/TradeTypes";
 
@@ -38,7 +38,7 @@ export const getAveragePerMonthPriceData = (): CompaniesStockPricesType => ({
         },
         {
             highestPriceOfTheDay: 14,
-            lowestPriceOfTheDay: 10,
+            lowestPriceOfTheDay: 6,
             timestamp: 1643864400000,
         },
         {
@@ -66,7 +66,47 @@ export const getAveragePerMonthExpectedData = (): Record<CompanyEnum, AveragePer
         },
         {
             month: MonthsEnum.FEB,
-            average: 13,
+            average: 12,
+        },
+    ],
+});
+
+export const getBestTradeExpectedData = (): Record<CompanyEnum, BestTradeInfoType> => ({
+    amazon: {
+        profit: 72,
+        minPriceInfo: { price: 8, timestamp: 1641186000000 },
+        maxPriceInfo: { price: 14, timestamp: 1641272400000 },
+    },
+    google: {
+        profit: 144,
+        minPriceInfo: { price: 6, timestamp: 1643864400000 },
+        maxPriceInfo: { price: 15, timestamp: 1645898400000 },
+    },
+});
+
+export const getBestTradeUnprofitableData = (): CompaniesStockPricesType => ({
+    amazon: [
+        {
+            highestPriceOfTheDay: 10,
+            lowestPriceOfTheDay: 10,
+            timestamp: 1641186000000,
+        },
+        {
+            highestPriceOfTheDay: 6,
+            lowestPriceOfTheDay: 6,
+            timestamp: 1641272400000,
+        },
+    ],
+    google: [
+        {
+            highestPriceOfTheDay: 8,
+            lowestPriceOfTheDay: 8,
+            timestamp: 1641186000000,
+        },
+        {
+            highestPriceOfTheDay: 7,
+            lowestPriceOfTheDay: 7,
+            timestamp: 1641272400000,
         },
     ],
 });

@@ -24,3 +24,15 @@ export enum MonthsEnum {
     NOV = "nov",
     DEC = "déc",
 }
+
+export interface BestTradeInfoType {
+    minPriceInfo: {
+        price: number;
+        timestamp: number;
+    };
+    maxPriceInfo: {
+        price: number;
+        timestamp: number;
+    };
+    profit: number;
+}

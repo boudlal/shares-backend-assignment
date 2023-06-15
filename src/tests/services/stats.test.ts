@@ -1,9 +1,14 @@
 import { CompanyEnum } from "../../types/TradeTypes";
 import * as statsService from "../../services/stats";
 import * as statsHelpers from "../../helpers/stats";
-import { getAveragePerMonthExpectedData, getAveragePerMonthPriceData } from "../dataFactory/statsFactory";
+import {
+    getAveragePerMonthExpectedData,
+    getAveragePerMonthPriceData,
+    getBestTradeExpectedData,
+    getBestTradeUnprofitableData,
+} from "../dataFactory/statsFactory";
 import { CompaniesStockPricesType } from "../../types/StockPriceTypes";
-import { AveragePerMonthType } from "../../types/StatsTypes";
+import { AveragePerMonthType, BestTradeInfoType } from "../../types/StatsTypes";
 
 describe("Stats service", () => {
     afterEach(() => {
@@ -46,6 +51,61 @@ describe("Stats service", () => {
             };
             expect(groupByMonthSpy).toBeCalledTimes(2);
             expect(calculateMonthlyAverageSpy).not.toBeCalled();
+            expect(result).toEqual(expectedResult);
+        });
+    });
+
+    describe("getBestTrade", () => {
+        it("should be defined", () => {
+            expect(statsService.getBestTrade).toBeDefined();
+        });
+
+        it("should return a BestTradeInfoType object for each company and call calculatePriceInfoAndProfit ", async () => {
+            // GIVEN
+            const spy = jest.spyOn(statsHelpers, "calculatePriceInfoAndProfit");
+            const pricesData = getAveragePerMonthPriceData();
+            const capital = 100;
+            // WHEN
+            const result = await statsService.getBestTrade(capital, pricesData);
+
+            // THEN
+            const expectedResult = getBestTradeExpectedData();
+            expect(spy).toBeCalled();
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should return null instead of BestTradeInfoType object for each company and not call calculatePriceInfoAndProfit", async () => {
+            // GIVEN
+            const spy = jest.spyOn(statsHelpers, "calculatePriceInfoAndProfit");
+            const pricesData = getAveragePerMonthPriceData();
+            const capital = 0;
+            // WHEN
+            const result = await statsService.getBestTrade(capital, pricesData);
+
+            // THEN
+            const expectedResult: Record<CompanyEnum, BestTradeInfoType> = {
+                [CompanyEnum.AMAZON]: null,
+                [CompanyEnum.GOOGLE]: null,
+            };
+            expect(spy).not.toBeCalled();
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should return null instead of BestTradeInfoType object for each company and call calculatePriceInfoAndProfit if no profit can be made", () => {
+            // GIVEN
+            const spy = jest.spyOn(statsHelpers, "calculatePriceInfoAndProfit");
+            const pricesData = getBestTradeUnprofitableData();
+            const capital = 100;
+
+            // WHEN
+            const result = statsService.getBestTrade(capital, pricesData);
+
+            // THEN
+            const expectedResult: Record<CompanyEnum, BestTradeInfoType> = {
+                [CompanyEnum.AMAZON]: null,
+                [CompanyEnum.GOOGLE]: null,
+            };
+            expect(spy).toBeCalled();
             expect(result).toEqual(expectedResult);
         });
     });

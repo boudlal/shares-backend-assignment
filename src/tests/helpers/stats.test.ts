@@ -112,4 +112,100 @@ describe("Stats helpers", () => {
             expect(result).toEqual(0);
         });
     });
+
+    describe("calculateAndCompareProfit", () => {
+        it("should be defined", () => {
+            expect(statsHelpers.calculatePriceInfoAndProfit).toBeDefined();
+        });
+
+        it("should calculate and return the profit and the new minPriceInfo & maxPriceInfo", async () => {
+            // GIVEN
+            const prices = getAveragePerMonthPriceData().amazon.slice(0, 2);
+            const minPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: prices[0].lowestPriceOfTheDay,
+            };
+            const maxPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: prices[0].highestPriceOfTheDay,
+            };
+            const capital = 100;
+
+            // WHEN
+            const result = statsHelpers.calculatePriceInfoAndProfit(capital, prices[1], minPriceInfo, maxPriceInfo);
+
+            // THEN
+            const expectedResult = {
+                profit: 72,
+                maxPriceInfo: { price: 14, timestamp: 1641272400000 },
+                minPriceInfo: { timestamp: 1641186000000, price: 8 },
+            };
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should return new minPriceInfo and maxPriceInfo if the minPriceInfo.price and maxPriceInfo.price are equal to 0", async () => {
+            // GIVEN
+            const prices = getAveragePerMonthPriceData().amazon.slice(0, 2);
+            const minPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: 0,
+            };
+            const maxPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: 0,
+            };
+            const capital = 100;
+
+            // WHEN
+            const result = statsHelpers.calculatePriceInfoAndProfit(capital, prices[1], minPriceInfo, maxPriceInfo);
+
+            // THEN
+            const expectedMinPriceInfo = { price: 10, timestamp: prices[1].timestamp };
+            const expectedMaxPriceInfo = { price: 14, timestamp: prices[1].timestamp };
+            expect(result.minPriceInfo).toEqual(expectedMinPriceInfo);
+            expect(result.maxPriceInfo).toEqual(expectedMaxPriceInfo);
+        });
+        it("should return new minPriceInfo and maxPriceInfo if the current day lowest price is less than the minPriceInfo.price and current day Highest price is greater than maxPriceInfo.price ", async () => {
+            // GIVEN
+            const prices = getAveragePerMonthPriceData().amazon.slice(0, 2);
+            const minPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: 11,
+            };
+            const maxPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: 12,
+            };
+            const capital = 100;
+
+            // WHEN
+            const result = statsHelpers.calculatePriceInfoAndProfit(capital, prices[1], minPriceInfo, maxPriceInfo);
+
+            // THEN
+            const expectedMinPriceInfo = { price: 10, timestamp: prices[1].timestamp };
+            const expectedMaxPriceInfo = { price: 14, timestamp: prices[1].timestamp };
+            expect(result.minPriceInfo).toEqual(expectedMinPriceInfo);
+            expect(result.maxPriceInfo).toEqual(expectedMaxPriceInfo);
+        });
+
+        it("should return profit 0 if capital is 0 ", async () => {
+            // GIVEN
+            const prices = getAveragePerMonthPriceData().amazon.slice(0, 2);
+            const minPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: prices[0].lowestPriceOfTheDay,
+            };
+            const maxPriceInfo = {
+                timestamp: prices[0].timestamp,
+                price: prices[0].highestPriceOfTheDay,
+            };
+            const capital = 0;
+
+            // WHEN
+            const result = statsHelpers.calculatePriceInfoAndProfit(capital, prices[1], minPriceInfo, maxPriceInfo);
+
+            // THEN
+            expect(result.profit).toEqual(0);
+        });
+    });
 });
