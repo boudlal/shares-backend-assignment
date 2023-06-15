@@ -2,6 +2,7 @@ import * as statsHelpers from "../../helpers/stats";
 import { StockPriceType } from "../../types/StockPriceTypes";
 import { getAveragePerMonthPriceData } from "../dataFactory/statsFactory";
 import { MonthsEnum } from "../../types/StatsTypes";
+import { CompanyEnum } from "../../types/TradeTypes";
 
 describe("Stats helpers", () => {
     afterEach(() => {
@@ -206,6 +207,36 @@ describe("Stats helpers", () => {
 
             // THEN
             expect(result.profit).toEqual(0);
+        });
+    });
+    describe("initCompaniesPriceInfo", () => {
+        it("should be defined", () => {
+            expect(statsHelpers.initCompaniesPriceInfo).toBeDefined();
+        });
+        it("should return price info object", () => {
+            // GIVEN
+            const companies = Object.values(CompanyEnum);
+
+            // WHEN
+            const result = statsHelpers.initCompaniesPriceInfo(companies);
+
+            // THEN
+            const priceObject = { price: 0, timestamp: 0 };
+            const expectedResult = {
+                [CompanyEnum.AMAZON]: priceObject,
+                [CompanyEnum.GOOGLE]: priceObject,
+            };
+
+            expect(result).toEqual(expectedResult);
+        });
+        it("should return an empty price info object if the length of companies passed is 0", () => {
+            // WHEN
+            const result = statsHelpers.initCompaniesPriceInfo([]);
+
+            // THEN
+            const expectedResult = {};
+
+            expect(result).toEqual(expectedResult);
         });
     });
 });
