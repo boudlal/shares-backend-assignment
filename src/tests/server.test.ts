@@ -2,6 +2,7 @@ import app, { initServer } from "../server";
 import { Server, IncomingMessage, ServerResponse } from "http";
 import { AddressInfo } from "net";
 import supertest from "supertest";
+import { CompanyEnum } from "../types/TradeTypes";
 
 describe("Test Server Listening", () => {
     const PORT = 1337;
@@ -73,6 +74,18 @@ describe("Test Server Listening", () => {
 
             // THEN
             expect(typeof result.body.message).toEqual("string");
+        });
+    });
+
+    describe("/stats", () => {
+        it("should return statusCode 200, averages and bestTrade ", async () => {
+            // WHEN
+            const result = await supertest(app).get("/stats").expect(200);
+
+            // THEN
+            expect(Array.isArray(result.body?.averages[CompanyEnum.AMAZON])).toEqual(true);
+            expect(Array.isArray(result.body?.averages[CompanyEnum.GOOGLE])).toEqual(true);
+            expect(Object.keys(result.body?.bestTrade)).toEqual(Object.values(CompanyEnum));
         });
     });
 });

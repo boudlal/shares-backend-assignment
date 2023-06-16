@@ -3,7 +3,7 @@ import * as simulationService from "../../services/simulation";
 import { getSimulation } from "../../controllers/simulation";
 import { createRequest, createResponse } from "node-mocks-http";
 
-describe("server", () => {
+describe("SimulationController", () => {
     afterEach(() => {
         jest.restoreAllMocks();
     });
