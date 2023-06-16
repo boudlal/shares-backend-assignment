@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { Server, IncomingMessage, ServerResponse } from "http";
 import { getSimulation } from "../controllers/simulation";
+import { getStats } from "../controllers/stats";
 const app = express();
 app.use(cors());
 
@@ -19,5 +20,6 @@ export const initServer = (port: number): Promise<Server<typeof IncomingMessage,
 };
 
 app.get("/simulate", getSimulation);
+app.get("/stats", getStats);
 
 export default app;

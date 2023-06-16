@@ -10,9 +10,9 @@ describe("StatsController", () => {
     });
 
     describe("getStats", () => {
-        it("should call loadData & getAveragePerMonth & getBestTrade then return statusCode 200, and averages & bestTrade ", async () => {
+        it("should call loadStocksPrices & getAveragePerMonth & getBestTrade then return statusCode 200, and averages & bestTrade ", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const getAveragePerMonthSpy = jest.spyOn(statsService, "getAveragePerMonth");
             const getBestTradeSpy = jest.spyOn(statsService, "getBestTrade");
             const request = createRequest();
@@ -24,7 +24,7 @@ describe("StatsController", () => {
             // THEN
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(getAveragePerMonthSpy).toBeCalledTimes(1);
             expect(getBestTradeSpy).toBeCalledTimes(1);
             expect(statusCode).toEqual(200);
@@ -34,9 +34,9 @@ describe("StatsController", () => {
             expect(Object.keys(body.bestTrade)).toEqual(Object.values(CompanyEnum));
         });
 
-        it("should call loadData and return status 500 and an error message if and error occured in loadData", async () => {
+        it("should call loadStocksPrices and return status 500 and an error message if and error occured in loadStocksPrices", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData").mockImplementation(() => {
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices").mockImplementation(() => {
                 throw "error";
             });
             const getAveragePerMonthSpy = jest.spyOn(statsService, "getAveragePerMonth");
@@ -51,16 +51,16 @@ describe("StatsController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(getAveragePerMonthSpy).not.toBeCalled();
             expect(getBestTradeSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(500);
         });
 
-        it("should call loadData & getAveragePerMonth and return status 500 and an error message if and error occured in getAveragePerMonth", async () => {
+        it("should call loadStocksPrices & getAveragePerMonth and return status 500 and an error message if and error occured in getAveragePerMonth", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const getAveragePerMonthSpy = jest.spyOn(statsService, "getAveragePerMonth").mockImplementation(() => {
                 throw "error";
             });
@@ -75,16 +75,16 @@ describe("StatsController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(getAveragePerMonthSpy).toBeCalledTimes(1);
             expect(getBestTradeSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(500);
         });
 
-        it("should call loadData & getAveragePerMonth & getBestTrade and return status 500 and an error message if and error occured in getAveragePerMonth", async () => {
+        it("should call loadStocksPrices & getAveragePerMonth & getBestTrade and return status 500 and an error message if and error occured in getAveragePerMonth", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const getAveragePerMonthSpy = jest.spyOn(statsService, "getAveragePerMonth");
             const getBestTradeSpy = jest.spyOn(statsService, "getBestTrade").mockImplementation(() => {
                 throw "error";
@@ -100,7 +100,7 @@ describe("StatsController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(getAveragePerMonthSpy).toBeCalledTimes(1);
             expect(getBestTradeSpy).toBeCalledTimes(1);
             expect(typeof body.message).toEqual("string");

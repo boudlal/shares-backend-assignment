@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { CompaniesStockPricesType } from "../types/StockPriceTypes";
 import path from "path";
 
-export const loadData = async (): Promise<CompaniesStockPricesType> => {
+export const loadStocksPrices = async (): Promise<CompaniesStockPricesType> => {
     try {
         const result = await Promise.all([
             fs.readFile(path.resolve(__dirname, "../../data/amazon.json"), "utf-8"),

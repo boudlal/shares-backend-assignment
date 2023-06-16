@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { loadData } from "../services/data";
+import { loadStocksPrices } from "../services/data";
 import { runSimulation } from "../services/simulation";
 import { performance } from "perf_hooks";
 
@@ -11,7 +11,7 @@ export const getSimulation = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid Capital" });
         }
 
-        const PriceData = await loadData();
+        const PriceData = await loadStocksPrices();
 
         const startTime = performance.now();
         const trades = runSimulation(capital, PriceData);

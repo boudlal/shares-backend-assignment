@@ -9,9 +9,9 @@ describe("SimulationController", () => {
     });
 
     describe("Get Simulation", () => {
-        it("should call loadData and runSimulation then return statusCode 200, array of trades and performance time ", async () => {
+        it("should call loadStocksPrices and runSimulation then return statusCode 200, array of trades and performance time ", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation");
             const request = createRequest({
                 query: { capital: 100000 },
@@ -24,16 +24,16 @@ describe("SimulationController", () => {
             // THEN
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(runSimulationSpy).toBeCalledTimes(1);
             expect(statusCode).toEqual(200);
             expect(Array.isArray(body.trades)).toEqual(true);
             expect(typeof body.performance).toEqual("number");
         });
 
-        it("should not call loadData and runSimulation and return statusCode 400 if capital is undefined", async () => {
+        it("should not call loadStocksPrices and runSimulation and return statusCode 400 if capital is undefined", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation");
             const request = createRequest({
                 query: { capital: undefined },
@@ -47,15 +47,15 @@ describe("SimulationController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).not.toBeCalled();
+            expect(loadStocksPricesSpy).not.toBeCalled();
             expect(runSimulationSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(400);
         });
 
-        it("should not call loadData and runSimulation and return statusCode 400 if capital is NaN", async () => {
+        it("should not call loadStocksPrices and runSimulation and return statusCode 400 if capital is NaN", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation");
             const request = createRequest({
                 query: { capital: NaN },
@@ -69,15 +69,15 @@ describe("SimulationController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).not.toBeCalled();
+            expect(loadStocksPricesSpy).not.toBeCalled();
             expect(runSimulationSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(400);
         });
 
-        it("should not call loadData and runSimulation and return statusCode 400 if capital is 0", async () => {
+        it("should not call loadStocksPrices and runSimulation and return statusCode 400 if capital is 0", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation");
             const request = createRequest({
                 query: { capital: 0 },
@@ -91,15 +91,15 @@ describe("SimulationController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).not.toBeCalled();
+            expect(loadStocksPricesSpy).not.toBeCalled();
             expect(runSimulationSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(400);
         });
 
-        it("should call loadData and return status 500 and an error message if and error occured in loadData", async () => {
+        it("should call loadStocksPrices and return status 500 and an error message if and error occured in loadStocksPrices", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData").mockImplementation(() => {
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices").mockImplementation(() => {
                 throw "error";
             });
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation");
@@ -115,15 +115,15 @@ describe("SimulationController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(runSimulationSpy).not.toBeCalled();
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(500);
         });
 
-        it("should call loadData and runSimulation and return status 500 and an error message if and error occured in runSimulation", async () => {
+        it("should call loadStocksPrices and runSimulation and return status 500 and an error message if and error occured in runSimulation", async () => {
             // GIVEN
-            const loadDataSpy = jest.spyOn(dataService, "loadData");
+            const loadStocksPricesSpy = jest.spyOn(dataService, "loadStocksPrices");
             const runSimulationSpy = jest.spyOn(simulationService, "runSimulation").mockImplementation(() => {
                 throw "error";
             });
@@ -139,7 +139,7 @@ describe("SimulationController", () => {
             const body = response._getJSONData();
             const statusCode = response._getStatusCode();
 
-            expect(loadDataSpy).toBeCalledTimes(1);
+            expect(loadStocksPricesSpy).toBeCalledTimes(1);
             expect(runSimulationSpy).toBeCalledTimes(1);
             expect(typeof body.message).toEqual("string");
             expect(statusCode).toEqual(500);

@@ -6,11 +6,11 @@ describe("Data service", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
-    describe("loadData", () => {
+    describe("loadStocksPrices", () => {
         test("should return an object that contains companies, and each company is an array ", async () => {
             const spy = jest.spyOn(fs.promises, "readFile");
 
-            const result = await dataService.loadData();
+            const result = await dataService.loadStocksPrices();
             const currentCompanies = Object.values(CompanyEnum);
 
             expect(spy).toBeCalledTimes(2);
@@ -27,7 +27,7 @@ describe("Data service", () => {
                 throw "error";
             });
 
-            expect(dataService.loadData()).rejects.toMatch("error");
+            expect(dataService.loadStocksPrices()).rejects.toMatch("error");
         });
 
         test("should throw an error if an error occured while parsing json", () => {
@@ -35,7 +35,7 @@ describe("Data service", () => {
                 throw "error";
             });
 
-            expect(dataService.loadData()).rejects.toMatch("error");
+            expect(dataService.loadStocksPrices()).rejects.toMatch("error");
         });
     });
 });
